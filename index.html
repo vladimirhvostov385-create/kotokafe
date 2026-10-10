@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<title>Котокафе</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Russo+One&family=Nunito:wght@600;800&display=swap">
+<style>
+*{box-sizing:border-box}
+/* Ночное кафе с котиками: тёмно-синий зал, тёплые лампы, розовые акценты. Одна тема, мобильный экран. */
+:root{
+  --bg:#121833; --bg2:#1b2348; --tile:#232c57; --tile-hi:#2d3870;
+  --lamp:#ffc857; --pink:#ff8fb1; --ink:#f4f2ff; --muted:#a1a9d6;
+  --display:'Russo One','Arial Black',system-ui,sans-serif;
+  --body:'Nunito',system-ui,-apple-system,'Segoe UI',sans-serif;
+  color-scheme:dark;
+}
+[hidden]{display:none!important}
+html,body{min-height:100%}
+body{margin:0;background:radial-gradient(120% 60% at 50% 0%,#24306a 0%,var(--bg) 60%) var(--bg);color:var(--ink);font-family:var(--body);-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+.app{max-width:460px;margin:0 auto;padding-inline:16px;padding-block:14px 28px;display:flex;flex-direction:column;gap:14px;box-sizing:border-box}
+.top{display:grid;grid-template-columns:1fr auto;align-items:end;gap:2px 12px}
+.brand{font-family:var(--display);font-size:1.05rem;letter-spacing:.06em;color:var(--pink);text-transform:uppercase}
+.wallet{grid-column:1/-1;display:flex;align-items:center;gap:10px;font-family:var(--display);font-size:2.4rem;line-height:1;font-variant-numeric:tabular-nums}
+.coin{width:.8em;height:.8em;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff3c4,var(--lamp) 45%,#d99a1e);box-shadow:0 0 18px rgba(255,200,87,.55);flex:none}
+.rate{grid-column:1/-1;color:var(--muted);font-weight:600;font-variant-numeric:tabular-nums}
+.rate b{color:var(--lamp)}
+.boost-on .rate b{color:var(--pink)}
+.boardwrap{position:relative;background:var(--bg2);border-radius:22px;padding:6px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.06),0 18px 40px rgba(0,0,0,.35)}
+canvas#board{display:block;width:100%;touch-action:none;cursor:grab}
+.toast{position:absolute;left:50%;top:14px;transform:translateX(-50%);background:rgba(10,14,35,.92);color:var(--ink);padding:9px 16px;border-radius:999px;font-weight:800;font-size:.92rem;white-space:nowrap;max-width:90%;overflow:hidden;text-overflow:ellipsis;box-shadow:0 6px 20px rgba(0,0,0,.4);pointer-events:none}
+.actions{display:grid;grid-template-columns:1.4fr 1fr;gap:10px}
+.btn{font:inherit;border:0;border-radius:16px;padding:12px 10px;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;color:var(--ink);background:var(--tile-hi);box-shadow:0 4px 0 #161d40;transition:transform .08s}
+.btn span{font-family:var(--display);font-size:1rem;letter-spacing:.02em}
+.btn small{font-weight:800;opacity:.85;font-variant-numeric:tabular-nums}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 #161d40}
+.btn.primary{background:var(--lamp);color:#3a2500;box-shadow:0 4px 0 #b9851c}
+.btn.primary:active{box-shadow:0 1px 0 #b9851c}
+.btn:disabled{opacity:.5;cursor:default}
+.btn:focus-visible{outline:3px solid var(--pink);outline-offset:2px}
+.hint{margin:0;color:var(--muted);font-size:.9rem;line-height:1.4;text-align:center}
+.collection h2{margin:0 0 8px;font-family:var(--display);font-size:.95rem;letter-spacing:.05em;text-transform:uppercase;display:flex;justify-content:space-between;color:var(--ink)}
+.collection h2 span{color:var(--lamp);font-variant-numeric:tabular-nums}
+.colgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.colgrid figure{margin:0;background:var(--tile);border-radius:14px;padding:4px 2px 6px;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0}
+.colgrid canvas{width:100%;max-width:64px;aspect-ratio:1}
+.colgrid figcaption{font-size:.68rem;font-weight:800;color:var(--muted);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.reset{align-self:center;background:none;border:0;color:var(--muted);font:inherit;font-size:.85rem;text-decoration:underline;cursor:pointer;padding:6px}
+.reset.armed{color:var(--pink)}
+.modal{position:fixed;inset:0;background:rgba(6,9,25,.75);display:grid;place-items:center;padding:16px;z-index:10}
+.card{background:var(--bg2);border-radius:26px;padding:22px 22px 18px;width:min(320px,100%);text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.5),inset 0 0 0 1px rgba(255,255,255,.08);animation:pop .35s cubic-bezier(.2,1.6,.4,1)}
+.card .eyebrow{font-family:var(--display);color:var(--pink);letter-spacing:.08em;text-transform:uppercase;font-size:.85rem}
+.card canvas{width:180px;height:180px;display:block;margin:4px auto}
+.card h3{margin:0;font-family:var(--display);font-size:1.6rem}
+.card p{margin:6px 0 16px;color:var(--muted);font-weight:600}
+.card .btn{width:100%}
+@keyframes pop{from{transform:scale(.6);opacity:0}to{transform:scale(1);opacity:1}}
+@media (prefers-reduced-motion:reduce){.card{animation:none}}
+</style>
+</head>
+<body>
+
+
+<div class="app" id="app">
+  <header class="top">
+    <div class="brand">Котокафе</div>
+    <div class="wallet"><span class="coin" aria-hidden="true"></span><b id="coins">0</b></div>
+    <div class="rate">Котики приносят <b id="rate">0</b> монет в секунду</div>
+  </header>
+
+  <div class="boardwrap">
+    <canvas id="board" aria-label="Игровое поле с котиками"></canvas>
+    <div id="toast" class="toast" hidden></div>
+  </div>
+
+  <div class="actions">
+    <button id="buy" class="btn primary"><span>Купить котика</span><small id="cost">10</small></button>
+    <button id="boost" class="btn"><span>Ускорение ×2</span><small id="boostInfo">на 30 секунд</small></button>
+  </div>
+  <p class="hint">Перетащите котика на такого же — получится новый, более редкий. Нажмите на котика, чтобы погладить.</p>
+
+  <section class="collection">
+    <h2>Коллекция <span id="found">1/10</span></h2>
+    <div id="col" class="colgrid"></div>
+  </section>
+
+  <button id="reset" class="reset">Начать заново</button>
+</div>
+
+<div id="modal" class="modal" hidden>
+  <div class="card">
+    <div class="eyebrow">Новый котик открыт!</div>
+    <canvas id="mcat" width="360" height="360"></canvas>
+    <h3 id="mname">Котёнок</h3>
+    <p id="minc"></p>
+    <button id="mok" class="btn primary"><span>Ура!</span></button>
+  </div>
+</div>
+
+<script>
+(function(){
+try{const tg=window.Telegram&&Telegram.WebApp;if(tg){tg.ready();tg.expand();tg.setHeaderColor&&tg.setHeaderColor("#121833");tg.setBackgroundColor&&tg.setBackgroundColor("#121833")}}catch(e){}
+const COLS=4, ROWS=5, N=COLS*ROWS, MAX=10;
+const CATS=[
+  {n:'Котёнок',  fur:'#f5efe8', belly:'#ffffff'},
+  {n:'Пушок',    fur:'#c3cbe0', belly:'#e9ecf7'},
+  {n:'Полосатик',fur:'#c99e70', belly:'#ecd6bc', stripes:'#7d5634'},
+  {n:'Рыжик',    fur:'#ff9a3c', belly:'#ffd9a8', stripes:'#cc6117'},
+  {n:'Джентльмен',fur:'#383852',belly:'#4d4d6c', dark:1, outline:1, eye:'#c6f36a', bow:1},
+  {n:'Сиамец',   fur:'#efe0c4', belly:'#fbf3e3', mask:'#5b3d2c', ear:'#5b3d2c', eye:'#6ec6ff'},
+  {n:'Котомаг',  fur:'#b9a6ff', belly:'#e0d6ff', hat:1},
+  {n:'Неонкот',  fur:'#5ff0d2', belly:'#c9fff3', glow:'rgba(95,240,210,.5)'},
+  {n:'Котокороль',fur:'#ffd45c',belly:'#fff0bd', crown:1, glow:'rgba(255,212,92,.45)'},
+  {n:'Космокот', fur:'#2f357a', belly:'#454ca0', dark:1, outline:1, stars:1, helmet:1, eye:'#ff8fb1', glow:'rgba(255,143,177,.5)'}
+];
+const income=L=>L?Math.round(Math.pow(2.7,L-1)):0;
+const fmt=n=>{n=Math.floor(n);if(n<1e4)return n.toLocaleString('ru-RU');const u=[[1e12,'трлн'],[1e9,'млрд'],[1e6,'млн'],[1e3,'тыс']];for(const[v,s]of u)if(n>=v)return(n/v).toFixed(n/v<100?1:0).replace('.',',')+' '+s;return String(n)};
+
+// ---------- состояние ----------
+const KEY='kotokafe-v1';
+const fresh=()=>({coins:30,grid:(()=>{const g=Array(N).fill(0);g[5]=1;g[6]=1;g[9]=2;return g})(),buys:0,best:2,boostUntil:0,boostReadyAt:0,last:Date.now()});
+let S=fresh();
+try{const raw=localStorage.getItem(KEY);if(raw){const o=JSON.parse(raw);if(o&&Array.isArray(o.grid)&&o.grid.length===N)S=Object.assign(fresh(),o)}}catch(e){}
+function save(){S.last=Date.now();try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+const cost=()=>Math.round(10*Math.pow(1.12,S.buys));
+const boosting=()=>Date.now()<S.boostUntil;
+const baseRate=()=>S.grid.reduce((a,L)=>a+income(L),0);
+const rate=()=>baseRate()*(boosting()?2:1);
+
+// ---------- DOM ----------
+const $=id=>document.getElementById(id);
+const cv=$('board'), ctx=cv.getContext('2d');
+let W=0,H=0,DPR=1,gap=0,cs=0;
+function resize(){
+  DPR=Math.min(window.devicePixelRatio||1,2.5);
+  W=cv.clientWidth; gap=W*0.025; cs=(W-gap*(COLS+1))/COLS; H=gap*(ROWS+1)+cs*ROWS;
+  cv.style.height=H+'px'; cv.width=Math.round(W*DPR); cv.height=Math.round(H*DPR);
+}
+const cellXY=i=>({x:gap+(i%COLS)*(cs+gap), y:gap+Math.floor(i/COLS)*(cs+gap)});
+function cellAt(x,y){const c=Math.floor((x-gap/2)/(cs+gap)), r=Math.floor((y-gap/2)/(cs+gap));if(c<0||c>=COLS||r<0||r>=ROWS)return -1;return r*COLS+c}
+
+let toastT=0;
+function toast(msg){const t=$('toast');t.textContent=msg;t.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>t.hidden=true,2200)}
+
+// ---------- рисование котика ----------
+function rr(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath()}
+function drawCat(c,cx,cy,k,L,t,o){
+  o=o||{}; const p=CATS[L-1], ph=o.phase||0, TAU=Math.PI*2;
+  c.save(); c.translate(cx,cy);
+  const sq=o.squish||0; c.scale(1+sq*0.14,1-sq*0.14);
+  c.translate(0,Math.sin(t*2.2+ph)*k*0.022);
+  if(p.glow){const g=c.createRadialGradient(0,0,k*0.08,0,0,k*0.56);g.addColorStop(0,p.glow);g.addColorStop(1,'rgba(0,0,0,0)');c.fillStyle=g;c.beginPath();c.arc(0,0,k*0.56,0,TAU);c.fill()}
+  c.fillStyle='rgba(0,0,0,.28)';c.beginPath();c.ellipse(0,k*0.41,k*0.29,k*0.055,0,0,TAU);c.fill();
+  // хвост
+  const sway=Math.sin(t*3+ph)*k*0.06;
+  c.strokeStyle=p.fur;c.lineWidth=k*0.075;c.lineCap='round';
+  c.beginPath();c.moveTo(k*0.2,k*0.3);c.quadraticCurveTo(k*0.46,k*0.28,k*0.38+sway,k*0.0);c.stroke();
+  if(p.stripes){c.strokeStyle=p.stripes;c.lineWidth=k*0.075;c.beginPath();c.moveTo(k*0.39+sway*0.95,k*0.06);c.lineTo(k*0.38+sway,k*0.0);c.stroke()}
+  // тело
+  c.fillStyle=p.fur;c.beginPath();c.ellipse(0,k*0.24,k*0.27,k*0.19,0,0,TAU);c.fill();
+  if(p.outline){c.strokeStyle='rgba(255,255,255,.2)';c.lineWidth=k*0.012;c.stroke()}
+  c.fillStyle=p.belly;c.beginPath();c.ellipse(0,k*0.28,k*0.14,k*0.11,0,0,TAU);c.fill();
+  c.fillStyle=p.fur;for(const px of[-0.12,0.12]){c.beginPath();c.ellipse(k*px,k*0.4,k*0.07,k*0.045,0,0,TAU);c.fill()}
+  // уши
+  const hy=-k*0.06, hr=k*0.27;
+  for(const s of[-1,1]){
+    c.fillStyle=p.ear||p.fur;c.beginPath();c.moveTo(s*k*0.26,hy-k*0.06);c.lineTo(s*k*0.23,hy-k*0.33);c.lineTo(s*k*0.05,hy-k*0.21);c.closePath();c.fill();
+    c.fillStyle='#ffb3c7';c.beginPath();c.moveTo(s*k*0.215,hy-k*0.11);c.lineTo(s*k*0.205,hy-k*0.27);c.lineTo(s*k*0.1,hy-k*0.19);c.closePath();c.fill();
+  }
+  // голова
+  c.fillStyle=p.fur;c.beginPath();c.ellipse(0,hy,hr,hr*0.88,0,0,TAU);c.fill();
+  if(p.outline){c.strokeStyle='rgba(255,255,255,.2)';c.lineWidth=k*0.012;c.stroke()}
+  if(p.mask){c.fillStyle=p.mask;c.beginPath();c.ellipse(0,hy+k*0.07,k*0.14,k*0.1,0,0,TAU);c.fill()}
+  if(p.stripes){c.strokeStyle=p.stripes;c.lineWidth=k*0.028;c.lineCap='round';
+    for(const sx of[-0.07,0,0.07]){c.beginPath();c.moveTo(k*sx,hy-hr*0.84);c.lineTo(k*sx*0.7,hy-hr*0.5);c.stroke()}
+    for(const s of[-1,1]){c.beginPath();c.moveTo(s*hr*0.98,hy+k*0.0);c.lineTo(s*hr*0.72,hy+k*0.01);c.stroke()}}
+  if(p.stars){c.fillStyle='#fff';for(const[sx,sy]of[[-0.15,-0.17],[0.13,-0.2],[0.19,0.03],[-0.19,0.2],[0.08,0.32],[-0.05,0.14]]){c.beginPath();c.arc(k*sx,sy<0?hy+k*sy:k*sy+k*0.05,k*0.013,0,TAU);c.fill()}}
+  // глаза
+  const blink=((t+ph*1.7)%4.3)<0.13;
+  for(const s of[-1,1]){const ex=s*k*0.1, ey=hy;
+    if(blink){c.strokeStyle=p.dark?'#e8e8f5':'#1b1b2a';c.lineWidth=k*0.02;c.beginPath();c.moveTo(ex-k*0.045,ey);c.quadraticCurveTo(ex,ey+k*0.025,ex+k*0.045,ey);c.stroke()}
+    else{c.fillStyle=p.eye||'#1b1b2a';c.beginPath();c.ellipse(ex,ey,k*0.046,k*0.056,0,0,TAU);c.fill();
+      if(p.eye){c.fillStyle='#111';c.beginPath();c.ellipse(ex,ey,k*0.016,k*0.046,0,0,TAU);c.fill()}
+      c.fillStyle='#fff';c.beginPath();c.arc(ex+k*0.016,ey-k*0.022,k*0.016,0,TAU);c.fill()}}
+  c.fillStyle='rgba(255,110,150,.38)';for(const s of[-1,1]){c.beginPath();c.ellipse(s*k*0.17,hy+k*0.075,k*0.042,k*0.026,0,0,TAU);c.fill()}
+  // нос, рот, усы
+  c.fillStyle='#ff7aa2';c.beginPath();c.moveTo(-k*0.026,hy+k*0.058);c.lineTo(k*0.026,hy+k*0.058);c.lineTo(0,hy+k*0.088);c.closePath();c.fill();
+  c.strokeStyle=p.dark?'#e8e8f5':'#4a3434';c.lineWidth=k*0.013;c.lineCap='round';
+  c.beginPath();c.arc(-k*0.024,hy+k*0.09,k*0.024,0.15*Math.PI,0.95*Math.PI);c.stroke();
+  c.beginPath();c.arc(k*0.024,hy+k*0.09,k*0.024,0.05*Math.PI,0.85*Math.PI);c.stroke();
+  c.strokeStyle=p.dark?'rgba(255,255,255,.55)':'rgba(60,40,40,.45)';c.lineWidth=k*0.009;
+  for(const s of[-1,1])for(const d of[-0.02,0.02]){c.beginPath();c.moveTo(s*k*0.14,hy+k*0.07+d*k);c.lineTo(s*k*0.33,hy+k*0.05+d*k*2.5);c.stroke()}
+  // аксессуары
+  if(p.bow){const by=hy+hr*0.9;c.fillStyle='#ff4d6d';c.beginPath();c.moveTo(0,by);c.lineTo(-k*0.1,by-k*0.05);c.lineTo(-k*0.1,by+k*0.05);c.closePath();c.fill();c.beginPath();c.moveTo(0,by);c.lineTo(k*0.1,by-k*0.05);c.lineTo(k*0.1,by+k*0.05);c.closePath();c.fill();c.fillStyle='#c9184a';c.beginPath();c.arc(0,by,k*0.026,0,TAU);c.fill()}
+  if(p.hat){const by=hy-hr*0.62;c.fillStyle='#5b3fd1';c.beginPath();c.moveTo(-k*0.19,by);c.quadraticCurveTo(-k*0.02,by-k*0.2,k*0.1,by-k*0.42);c.quadraticCurveTo(k*0.07,by-k*0.15,k*0.19,by);c.closePath();c.fill();
+    c.beginPath();c.ellipse(0,by,k*0.25,k*0.05,0,0,TAU);c.fill();star(c,k*0.0,by-k*0.12,k*0.045,'#ffc857')}
+  if(p.crown){const by=hy-hr*0.7;c.fillStyle='#ffb000';c.beginPath();c.moveTo(-k*0.15,by);c.lineTo(-k*0.17,by-k*0.15);c.lineTo(-k*0.08,by-k*0.07);c.lineTo(0,by-k*0.19);c.lineTo(k*0.08,by-k*0.07);c.lineTo(k*0.17,by-k*0.15);c.lineTo(k*0.15,by);c.closePath();c.fill();
+    c.fillStyle='#ff4d6d';c.beginPath();c.arc(0,by-k*0.05,k*0.022,0,TAU);c.fill();c.fillStyle='#5fd0ff';for(const s of[-1,1]){c.beginPath();c.arc(s*k*0.09,by-k*0.035,k*0.016,0,TAU);c.fill()}}
+  if(p.helmet){c.strokeStyle='rgba(180,230,255,.75)';c.lineWidth=k*0.022;c.beginPath();c.arc(0,hy-k*0.05,k*0.36,0,TAU);c.stroke();
+    c.fillStyle='rgba(180,230,255,.12)';c.fill();c.strokeStyle='rgba(255,255,255,.7)';c.lineWidth=k*0.02;c.beginPath();c.arc(0,hy-k*0.05,k*0.3,1.15*Math.PI,1.4*Math.PI);c.stroke()}
+  c.restore();
+}
+function star(c,x,y,r,col){c.fillStyle=col;c.beginPath();for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5, rr=i%2?r*0.45:r;c.lineTo(x+Math.cos(a)*rr,y+Math.sin(a)*rr)}c.closePath();c.fill()}
+
+// ---------- эффекты ----------
+const parts=[], floats=[], pop=new Array(N).fill(0), squish=new Array(N).fill(0), tick=new Array(N).fill(0).map(()=>Math.random()*3);
+function burst(x,y,col){for(let i=0;i<26;i++){const a=Math.random()*Math.PI*2, v=60+Math.random()*180;parts.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-60,life:1,col:i%3?col:'#ffc857',r:2+Math.random()*4,star:i%4===0})}}
+function floatText(x,y,txt,col){floats.push({x,y,txt,col:col||'#ffc857',life:1})}
+
+// ---------- ввод ----------
+let drag=null;
+function pos(e){const r=cv.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top}}
+cv.addEventListener('pointerdown',e=>{const p=pos(e), i=cellAt(p.x,p.y);if(i<0||!S.grid[i])return;cv.setPointerCapture(e.pointerId);drag={from:i,x:p.x,y:p.y,sx:p.x,sy:p.y,moved:false};cv.style.cursor='grabbing'});
+cv.addEventListener('pointermove',e=>{if(!drag)return;const p=pos(e);drag.x=p.x;drag.y=p.y;if(Math.hypot(p.x-drag.sx,p.y-drag.sy)>8)drag.moved=true});
+function endDrag(e){if(!drag)return;const d=drag;drag=null;cv.style.cursor='grab';
+  if(!d.moved){pet(d.from);return}
+  const t=cellAt(d.x,d.y);if(t<0||t===d.from)return;
+  const a=S.grid[d.from], b=S.grid[t];
+  if(!b){S.grid[t]=a;S.grid[d.from]=0;pop[t]=0.6}
+  else if(a===b&&a<MAX){merge(d.from,t,a)}
+  else if(a===b){toast('Это самый редкий котик!')}
+  else{S.grid[t]=a;S.grid[d.from]=b;pop[t]=pop[d.from]=0.6}
+  save();
+}
+cv.addEventListener('pointerup',endDrag);cv.addEventListener('pointercancel',()=>{drag=null});
+function pet(i){const L=S.grid[i], g=income(L)*2;S.coins+=g;squish[i]=1;const c=cellXY(i);floatText(c.x+cs/2,c.y+cs*0.2,'+'+fmt(g));}
+function merge(from,to,L){
+  S.grid[from]=0;S.grid[to]=L+1;pop[to]=1;
+  const c=cellXY(to);burst(c.x+cs/2,c.y+cs/2,CATS[L].fur);floatText(c.x+cs/2,c.y+cs*0.15,CATS[L].n+'!','#ff8fb1');
+  if(L+1>S.best){S.best=L+1;renderCollection();showNew(L+1)}
+}
+$('buy').addEventListener('click',()=>{
+  const empty=S.grid.map((v,i)=>v?-1:i).filter(i=>i>=0);
+  if(!empty.length){toast('Нет места — соедините котиков');return}
+  const pr=cost();if(S.coins<pr){toast('Не хватает монет');return}
+  S.coins-=pr;S.buys++;const i=empty[Math.floor(Math.random()*empty.length)];
+  S.grid[i]=Math.random()<0.1?2:1;pop[i]=1;const c=cellXY(i);burst(c.x+cs/2,c.y+cs/2,'#ffffff');save();
+});
+$('boost').addEventListener('click',()=>{if(Date.now()<S.boostReadyAt)return;S.boostUntil=Date.now()+30000;S.boostReadyAt=Date.now()+90000;toast('Котики работают вдвое быстрее!');save()});
+let armed=0;
+$('reset').addEventListener('click',()=>{const b=$('reset');if(!armed){armed=setTimeout(()=>{armed=0;b.classList.remove('armed');b.textContent='Начать заново'},3000);b.classList.add('armed');b.textContent='Нажмите ещё раз, чтобы стереть прогресс';return}
+  clearTimeout(armed);armed=0;b.classList.remove('armed');b.textContent='Начать заново';S=fresh();save();renderCollection();toast('Новая игра')});
+
+// ---------- окно нового котика ----------
+let modalL=0;
+function showNew(L){modalL=L;$('mname').textContent=CATS[L-1].n;$('minc').textContent='Приносит '+fmt(income(L))+' монет в секунду';$('modal').hidden=false;$('mok').focus()}
+$('mok').addEventListener('click',()=>{$('modal').hidden=true;modalL=0});
+const mctx=$('mcat').getContext('2d');
+
+// ---------- коллекция ----------
+function renderCollection(){
+  const box=$('col');box.innerHTML='';
+  CATS.forEach((p,i)=>{const L=i+1, f=document.createElement('figure'), c=document.createElement('canvas');c.width=c.height=128;
+    const x=c.getContext('2d');drawCat(x,64,70,110,L,0.6);
+    if(L>S.best){x.globalCompositeOperation='source-atop';x.fillStyle='#0d1230';x.fillRect(0,0,128,128);x.globalCompositeOperation='source-over';x.fillStyle='#5c66a3';x.font='bold 44px Russo One, sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText('?',64,66)}
+    const cap=document.createElement('figcaption');cap.textContent=L<=S.best?p.n:'???';f.append(c,cap);box.append(f)});
+  $('found').textContent=S.best+'/'+MAX;
+}
+
+// ---------- офлайн-доход ----------
+(function(){const away=Math.min((Date.now()-S.last)/1000,7200);if(away>60){const g=Math.floor(baseRate()*away*0.5);if(g>0){S.coins+=g;setTimeout(()=>toast('Пока вас не было, котики заработали '+fmt(g)),400)}}})();
+
+// ---------- цикл ----------
+let lastT=performance.now(), saveAcc=0;
+function frame(now){
+  const dt=Math.min((now-lastT)/1000,0.1);lastT=now;const t=now/1000;
+  S.coins+=rate()*dt;saveAcc+=dt;if(saveAcc>3){saveAcc=0;save()}
+  ctx.setTransform(DPR,0,0,DPR,0,0);ctx.clearRect(0,0,W,H);
+  const target=drag&&drag.moved?cellAt(drag.x,drag.y):-1;
+  for(let i=0;i<N;i++){const c=cellXY(i), L=S.grid[i];
+    let fill='#232c57';
+    if(target===i&&target!==drag.from){fill=S.grid[i]===S.grid[drag.from]&&S.grid[i]<MAX?'#4b3d2a':'#2d3870'}
+    ctx.fillStyle=fill;rr(ctx,c.x,c.y,cs,cs,cs*0.2);ctx.fill();
+    if(target===i&&target!==drag.from&&S.grid[i]===S.grid[drag.from]&&S.grid[i]<MAX){ctx.strokeStyle='#ffc857';ctx.lineWidth=3;ctx.stroke()}
+    if(!L||(drag&&drag.moved&&drag.from===i))continue;
+    pop[i]=Math.max(0,pop[i]-dt*3);squish[i]=Math.max(0,squish[i]-dt*4);
+    const sc=1+Math.sin(pop[i]*Math.PI)*0.25*(pop[i]>0?1:0);
+    ctx.save();ctx.translate(c.x+cs/2,c.y+cs*0.54);ctx.scale(sc,sc);drawCat(ctx,0,0,cs*0.92,L,t,{phase:i*0.9,squish:Math.sin(squish[i]*Math.PI)});ctx.restore();
+    // значок уровня
+    ctx.fillStyle='rgba(10,14,35,.75)';ctx.beginPath();ctx.arc(c.x+cs*0.16,c.y+cs*0.16,cs*0.11,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#ffc857';ctx.font=`${Math.round(cs*0.13)}px Russo One, sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(L,c.x+cs*0.16,c.y+cs*0.165);
+    tick[i]+=dt;if(tick[i]>3){tick[i]=0;floatText(c.x+cs/2,c.y+cs*0.12,'+'+fmt(income(L)*3*(boosting()?2:1)),'rgba(255,200,87,.85)')}
+  }
+  if(drag&&drag.moved){drawCat(ctx,drag.x,drag.y-cs*0.1,cs*1.02,S.grid[drag.from],t,{phase:0})}
+  for(let i=parts.length-1;i>=0;i--){const p=parts[i];p.life-=dt*1.4;if(p.life<=0){parts.splice(i,1);continue}p.vy+=300*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;ctx.globalAlpha=p.life;
+    if(p.star)star(ctx,p.x,p.y,p.r*1.6,p.col);else{ctx.fillStyle=p.col;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill()}}
+  ctx.globalAlpha=1;
+  for(let i=floats.length-1;i>=0;i--){const f=floats[i];f.life-=dt*0.8;if(f.life<=0){floats.splice(i,1);continue}f.y-=dt*40;ctx.globalAlpha=Math.min(1,f.life*2);
+    ctx.font=`${Math.round(cs*0.15)}px Russo One, sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.lineWidth=4;ctx.strokeStyle='rgba(10,14,35,.8)';ctx.strokeText(f.txt,f.x,f.y);ctx.fillStyle=f.col;ctx.fillText(f.txt,f.x,f.y)}
+  ctx.globalAlpha=1;
+  if(modalL){mctx.clearRect(0,0,360,360);drawCat(mctx,180,196,300,modalL,t,{phase:0})}
+  // интерфейс
+  $('coins').textContent=fmt(S.coins);$('rate').textContent=fmt(rate());
+  document.getElementById('app').classList.toggle('boost-on',boosting());
+  const pr=cost();$('cost').textContent=fmt(pr)+' монет';$('buy').disabled=S.coins<pr;
+  const now2=Date.now(), bb=$('boost');
+  if(boosting()){bb.disabled=true;$('boostInfo').textContent='идёт: '+Math.ceil((S.boostUntil-now2)/1000)+' с'}
+  else if(now2<S.boostReadyAt){bb.disabled=true;$('boostInfo').textContent='снова через '+Math.ceil((S.boostReadyAt-now2)/1000)+' с'}
+  else{bb.disabled=false;$('boostInfo').textContent='на 30 секунд'}
+  requestAnimationFrame(frame);
+}
+window.addEventListener('resize',resize);
+resize();renderCollection();
+document.fonts&&document.fonts.ready.then(renderCollection);
+requestAnimationFrame(frame);
+})();
+</script>
+
+</body>
+</html>
